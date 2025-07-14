@@ -1,16 +1,25 @@
 # Kitchen Sink
 
-This project can be used as a starting point to create your own Vaadin application with Spring Boot.
-It contains all the necessary configuration and some placeholder files to get you started.
+This project serves as a testing, diagnostic and demonstration application for Vaadin, Control Center and the Acceleration Kits.
 
 ## Running the application
 
-Open the project in an IDE. You can download the [IntelliJ community edition](https://www.jetbrains.com/idea/download) if you do not have a suitable IDE already.
-Once opened in the IDE, locate the `Application` class and run the main method using "Debug".
+To run the application execute the `spring-boot:run` goal using Maven, optionally specifying a profile for Control Center or a Kit:
 
-For more information on installing in various IDEs, see [how to import Vaadin projects to different IDEs](https://vaadin.com/docs/latest/getting-started/import).
+**Control Center**
+```
+./mvnw spring-boot:run -Pcontrol-center
+```
 
-If you install the Vaadin plugin for IntelliJ, you should instead launch the `Application` class using "Debug using HotswapAgent" to see updates in the Java code immediately reflected in the browser.
+**Kubernetes Kit**
+```
+./mvnw spring-boot:run -Pkubernetes-kit
+```
+
+**Observability Kit**
+```
+./mvnw spring-boot:run -Pobservability-kit
+```
 
 ## Deploying to Production
 
@@ -28,40 +37,12 @@ You then launch the application using
 java -jar target/kitchen-sink-1.0-SNAPSHOT.jar
 ```
 
-## Project structure
-
-- `MainLayout.java` in `src/main/java` contains the navigation setup (i.e., the
-  side/top bar and the main menu). This setup uses
-  [App Layout](https://vaadin.com/docs/components/app-layout).
-- `views` package in `src/main/java` contains the server-side Java views of your application.
-- `views` folder in `src/main/frontend` contains the client-side JavaScript views of your application.
-- `themes` folder in `src/main/frontend` contains the custom CSS styles.
-
-## Useful links
-
-- Read the documentation at [vaadin.com/docs](https://vaadin.com/docs).
-- Follow the tutorial at [vaadin.com/docs/latest/tutorial/overview](https://vaadin.com/docs/latest/tutorial/overview).
-- Create new projects at [start.vaadin.com](https://start.vaadin.com/).
-- Search UI components and their usage examples at [vaadin.com/docs/latest/components](https://vaadin.com/docs/latest/components).
-- View use case applications that demonstrate Vaadin capabilities at [vaadin.com/examples-and-demos](https://vaadin.com/examples-and-demos).
-- Build any UI without custom CSS by discovering Vaadin's set of [CSS utility classes](https://vaadin.com/docs/styling/lumo/utility-classes). 
-- Find a collection of solutions to common use cases at [cookbook.vaadin.com](https://cookbook.vaadin.com/).
-- Find add-ons at [vaadin.com/directory](https://vaadin.com/directory).
-- Ask questions on [Stack Overflow](https://stackoverflow.com/questions/tagged/vaadin) or join our [Forum](https://vaadin.com/forum).
-- Report issues, create pull requests in [GitHub](https://github.com/vaadin).
-
-
 ## Deploying using Docker
 
-To build the Dockerized version of the project, run
+To build a Docker image for the application, you can execute the `spring-boot:build-image` goal using Maven:
 
 ```
-mvn clean package -Pproduction
-docker build . -t kitchen-sink:latest
+./mvnw clean spring-boot:build-image -Pproduction -Dspring-boot.build-image.imagePlatform=linux/amd64 -Dspring-boot.build-image.imageName=kitchen-sink:1.0-SNAPSHOT
 ```
 
-Once the Docker image is correctly built, you can test it locally using
-
-```
-docker run -p 8080:8080 kitchen-sink:latest
-```
+Again, you can optionally specify a profile for Control Center or a Kit.

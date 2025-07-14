@@ -1,4 +1,4 @@
-package com.vaadin.kitchensink;
+package org.vaadin.kitchensink;
 
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.router.PageTitle;

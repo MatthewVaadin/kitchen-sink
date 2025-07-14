@@ -1,0 +1,14 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Kitchen Sink (with Observability)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="kitchen-sink" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="org.vaadin.kitchensink.Application" />
+    <option name="ALTERNATIVE_JRE_PATH" />
+    <option name="SHORTEN_COMMAND_LINE" value="NONE" />
+    <option name="VM_PARAMETERS" value="-javaagent:target/dependency/observability-kit-agent-3.1.0.jar -Dotel.javaagent.configuration-file=target/classes/observability-kit.properties -Xms256m -Xmx512m" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+      <option name="Maven.BeforeRunTask" enabled="true" file="$PROJECT_DIR$/pom.xml" goal="dependency:copy-dependencies" />
+    </method>
+  </configuration>
+</component>
+
