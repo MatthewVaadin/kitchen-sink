@@ -75,7 +75,7 @@ public class UserView extends VerticalLayout {
                 add(new Span("Account Non-Expired: " + user.isAccountNonExpired()));
                 add(new Span("Account Non-Locked: " + user.isAccountNonLocked()));
                 add(new Span("Credentials Non-Expired: " + user.isCredentialsNonExpired()));
-                add(new Span("Enabled: " + user.isEnabled())));
-        });
+                add(new Span("Enabled: " + user.isEnabled()));
+        }));
     }
 }
