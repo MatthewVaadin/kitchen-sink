@@ -4,10 +4,9 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthComponent;
@@ -22,7 +21,10 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.data.provider.Query;
+import com.vaadin.flow.component.progressbar.ProgressBar;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
@@ -40,6 +42,8 @@ public class HealthView extends VerticalLayout {
 
     private final transient HealthEndpoint healthEndpoint;
     private final Grid<HealthComponentEntry> grid;
+    private final ListDataProvider<HealthComponentEntry> dataProvider;
+    private final Span timestamp;
 
     public static class HealthComponentEntry {
         private final String name;
@@ -62,6 +66,18 @@ public class HealthView extends VerticalLayout {
 
         public Map<String, Object> getDetails() {
             return details;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof HealthComponentEntry that)) return false;
+            return name.equals(that.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return name.hashCode();
         }
     }
 
@@ -93,14 +109,34 @@ public class HealthView extends VerticalLayout {
         H1 header = new H1("Overall Status: " + overall.getStatus());
 
         LocalDateTime now = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
-        Span timestamp = new Span("Checked at: " + now.format(TIMESTAMP_FORMATTER));
+        timestamp = new Span("Checked at: " + now.format(TIMESTAMP_FORMATTER));
 
-        HorizontalLayout top = new HorizontalLayout(header, timestamp);
+        // Add progress bar for refresh indication
+        ProgressBar progressBar = new ProgressBar();
+        progressBar.setIndeterminate(true);
+        progressBar.setWidth("100px");
+        progressBar.getStyle().set("margin-left", "1rem");
+
+        HorizontalLayout top = new HorizontalLayout(header, timestamp, progressBar);
         top.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
         add(top);
 
+        // Create data provider with mutable list
+        dataProvider = new ListDataProvider<>(new ArrayList<>());
+
         // Build the grid with item details renderer
         grid = new Grid<>(HealthComponentEntry.class, false);
+        grid.setDataProvider(dataProvider);
+
+        // Add chevron icon column
+        grid.addComponentColumn(entry -> {
+            boolean isExpanded = grid.isDetailsVisible(entry);
+            Icon chevron = new Icon(isExpanded ? VaadinIcon.CHEVRON_DOWN : VaadinIcon.CHEVRON_RIGHT);
+            chevron.setSize("16px");
+            chevron.getStyle().set("color", "var(--lumo-secondary-text-color)");
+            return chevron;
+        }).setHeader("").setAutoWidth(true).setFlexGrow(0);
+
         grid.addColumn(HealthComponentEntry::getName)
                 .setHeader("Component")
                 .setAutoWidth(true);
@@ -111,16 +147,23 @@ public class HealthView extends VerticalLayout {
         // Set up item details renderer with ComponentRenderer
         grid.setItemDetailsRenderer(new ComponentRenderer<>(this::createDetailsRenderer));
 
+        // Add listener to update chevron icons when details are toggled
+        grid.addItemClickListener(event -> {
+            HealthComponentEntry item = event.getItem();
+            // Refresh the row to update the chevron icon
+            grid.getDataProvider().refreshItem(item);
+        });
+
         grid.setSizeFull();
         add(grid);
         expand(grid);
 
         // Initial load
-        refreshGrid();
+        refreshData();
 
-        // Poll every 5 seconds but preserve expanded items
+        // Poll every 5 seconds
         UI.getCurrent().setPollInterval(5_000);
-        UI.getCurrent().addPollListener(event -> refreshGridPreservingExpansion());
+        UI.getCurrent().addPollListener(event -> refreshData());
     }
 
     private VerticalLayout createDetailsRenderer(HealthComponentEntry entry) {
@@ -144,7 +187,7 @@ public class HealthView extends VerticalLayout {
 
         // Convert details map to list of DetailEntry objects
         List<DetailEntry> detailEntries = entry.getDetails().entrySet().stream()
-                .map(e -> new DetailEntry(e.getKey(), formatValue(e.getValue())))
+                .map(e -> new DetailEntry(e.getKey(), formatValue(e.getKey(), e.getValue())))
                 .toList();
 
         detailsGrid.setItems(detailEntries);
@@ -155,17 +198,40 @@ public class HealthView extends VerticalLayout {
         return layout;
     }
 
-    private String formatValue(Object value) {
-        if (value == null) {
-            return "null";
-        }
-        if (value instanceof Map || value instanceof List) {
+    private String formatValue(String key, Object value) {
+        if (value instanceof Number number) {
+            if (isDiskSizeKey(key)) {
+                return formatBytes(number.longValue());
+            }
             return value.toString();
+        }
+        // If value is a string that looks like a number and key is disk size
+        if (isDiskSizeKey(key) && value instanceof String string) {
+            try {
+                long bytes = Long.parseLong(string);
+                return formatBytes(bytes);
+            } catch (NumberFormatException ignored) {
+                // If parsing fails, return the original string
+                return string;
+            }
         }
         return String.valueOf(value);
     }
 
-    private void refreshGrid() {
+    private boolean isDiskSizeKey(String key) {
+        String lower = key.toLowerCase();
+        return lower.contains("total") || lower.contains("free") || lower.contains("threshold");
+    }
+
+    private String formatBytes(long bytes) {
+        if (bytes < 1024) return bytes + " B";
+        int exp = (int) (Math.log(bytes) / Math.log(1024));
+        String pre = ("KMGTPE").charAt(exp - 1) + "B";
+        double value = bytes / Math.pow(1024, exp);
+        return String.format("%.1f %s", value, pre);
+    }
+
+    private void refreshData() {
         HealthComponent h = healthEndpoint.health();
         List<HealthComponentEntry> entries;
 
@@ -197,28 +263,13 @@ public class HealthView extends VerticalLayout {
             ));
         }
 
-        grid.setItems(entries);
-    }
+        // Update data provider items - this should preserve expanded state better
+        dataProvider.getItems().clear();
+        dataProvider.getItems().addAll(entries);
+        dataProvider.refreshAll();
 
-    private void refreshGridPreservingExpansion() {
-        // Store names of currently expanded items
-        Set<String> expandedItemNames = new HashSet<>();
-        grid.getDataProvider().fetch(new Query<>()).forEach(item -> {
-            if (grid.isDetailsVisible(item)) {
-                expandedItemNames.add(item.getName());
-            }
-        });
-
-        // Refresh the data
-        refreshGrid();
-
-        // Restore expanded state for items with matching names
-        if (!expandedItemNames.isEmpty()) {
-            grid.getDataProvider().fetch(new Query<>()).forEach(newItem -> {
-                if (expandedItemNames.contains(newItem.getName())) {
-                    grid.setDetailsVisible(newItem, true);
-                }
-            });
-        }
+        // Update timestamp
+        LocalDateTime now = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
+        timestamp.setText("Checked at: " + now.format(TIMESTAMP_FORMATTER));
     }
 }

@@ -1,6 +1,8 @@
 package org.vaadin.kitchensink.views.shared;
 
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +29,8 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 public class BuildView extends VerticalLayout {
 
     private static final Logger logger = LoggerFactory.getLogger(BuildView.class);
+    private static final DateTimeFormatter BUILD_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
 
     public static class BuildProperty {
         private final String property;
@@ -77,7 +81,8 @@ public class BuildView extends VerticalLayout {
         }
 
         if (buildProperties.getTime() != null) {
-            Span buildTime = new Span("Built: " + buildProperties.getTime().toString());
+            String formattedTime = BUILD_TIME_FORMATTER.format(buildProperties.getTime());
+            Span buildTime = new Span("Built: " + formattedTime);
             buildTime.addClassNames(LumoUtility.FontSize.SMALL, LumoUtility.TextColor.TERTIARY);
             summaryLayout.add(buildTime);
         }
@@ -129,7 +134,8 @@ public class BuildView extends VerticalLayout {
 
             if (buildProperties.getTime() != null) {
                 Instant buildTime = buildProperties.getTime();
-                properties.add(new BuildProperty("Build Time", buildTime.toString()));
+                String formattedTime = BUILD_TIME_FORMATTER.format(buildTime);
+                properties.add(new BuildProperty("Build Time", formattedTime));
                 properties.add(new BuildProperty("Build Time (Epoch)", String.valueOf(buildTime.toEpochMilli())));
             }
 

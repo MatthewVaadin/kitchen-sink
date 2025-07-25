@@ -122,14 +122,15 @@ public class EnvironmentView extends VerticalLayout {
         propertiesGrid.addColumn(PropertyEntry::getKey)
                 .setHeader("Property Key")
                 .setAutoWidth(true)
+                .setFlexGrow(0)
                 .setSortable(true);
-        propertiesGrid.addColumn(PropertyEntry::getValue)
-                .setHeader("Value")
-                .setAutoWidth(true);
         propertiesGrid.addColumn(PropertyEntry::getSource)
                 .setHeader("Source")
                 .setAutoWidth(true)
+                .setFlexGrow(0)
                 .setSortable(true);
+        propertiesGrid.addColumn(PropertyEntry::getValue)
+                .setHeader("Value");
 
         // Collect all properties from different sources
         List<PropertyEntry> allProperties = new ArrayList<>();

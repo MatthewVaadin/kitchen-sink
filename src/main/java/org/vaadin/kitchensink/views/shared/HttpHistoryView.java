@@ -33,7 +33,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 public class HttpHistoryView extends VerticalLayout {
 
     private static final DateTimeFormatter TIME_FORMATTER =
-            DateTimeFormatter.ofPattern("MMM dd HH:mm:ss");
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"); // Match HealthView formatting
 
     public HttpHistoryView(HttpExchangeRepository exchangeRepository) {
         setSpacing(true);

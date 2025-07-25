@@ -2,6 +2,8 @@
 
 This project serves as a testing, diagnostic and demonstration application for Vaadin, Control Center and the Acceleration Kits.
 
+**IMPORTANT**: This is not meant to be a production application. It is intended for development and testing purposes only.
+
 ## Running the application
 
 To run the application execute the `spring-boot:run` goal using Maven, optionally specifying a profile for Control Center or a Kit:
@@ -20,6 +22,8 @@ To run the application execute the `spring-boot:run` goal using Maven, optionall
 ```
 ./mvnw spring-boot:run -Pobservability-kit
 ```
+
+**NOTE**: Observability Kit properties are stored in `src/main/resources/observability-kit.properties`.
 
 ## Deploying to Production
 
